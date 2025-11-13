@@ -2,12 +2,17 @@ import { ConfigManager } from '../lib/config';
 import { APIClient } from '../lib/api-client';
 import { Reporter } from '../lib/reporter';
 import { FileScanner } from '../lib/file-scanner';
+import { RepoDetector } from '../lib/repo-detector';
 
 interface ScanOptions {
   dir?: string;
+  file?: string;
   ai?: boolean;
+  noAi?: boolean;
   dependencies?: boolean;
+  noDependencies?: boolean;
   secrets?: boolean;
+  noSecrets?: boolean;
   json?: boolean;
 }
 
@@ -22,13 +27,18 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
     process.exit(1);
   }
 
-  const scanDir = options.dir || process.cwd();
-
   try {
     reporter.info('Collecting files...');
 
     const fileScanner = new FileScanner();
-    const files = await fileScanner.collectFiles(scanDir);
+    const scanDir = options.file ? process.cwd() : (options.dir || process.cwd());
+    let files: Record<string, string>;
+
+    if (options.file) {
+      files = await fileScanner.scanSingleFile(options.file);
+    } else {
+      files = await fileScanner.collectFiles(scanDir);
+    }
 
     const fileCount = Object.keys(files).length;
 
@@ -37,14 +47,25 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
       return;
     }
 
+    // Detect repository name from .git/config or package.json
+    const repository = RepoDetector.detectRepositoryName(scanDir);
+
     reporter.info(`Found ${fileCount} file(s), sending to GitGuard...`);
+
+    const preferences = config.getPreferences();
+    const subscription = config.getSubscription() || 'free';
+
+    const includeAI = options.noAi ? false : (options.ai || preferences.aiScanEnabled);
+    const includeDependencies = options.noDependencies ? false : (options.dependencies || preferences.dependencyScanEnabled);
+    const includeSecrets = options.noSecrets ? false : (options.secrets || preferences.secretScanEnabled);
 
     const result = await apiClient.scan({
       files,
+      repository,
       options: {
-        includeAI: options.ai,
-        includeDependencies: options.dependencies,
-        includeSecrets: options.secrets,
+        includeAI,
+        includeDependencies,
+        includeSecrets,
       },
     });
 
