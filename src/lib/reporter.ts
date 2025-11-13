@@ -45,14 +45,31 @@ export class Reporter {
   }
 
   reportScan(result: ScanResponse): void {
-    console.log(this.color('\nScan Results', 'bright'));
+    console.log(this.color('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'dim'));
+    console.log(this.color('  GitGuard Security Scan Results', 'bright'));
+    console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'dim'));
+
+    // Show scan metadata
     console.log(this.color(`Files scanned: ${result.filesScanned}`, 'dim'));
-    console.log(
-      this.color(`Duration: ${(result.duration / 1000).toFixed(2)}s\n`, 'dim')
-    );
+    console.log(this.color(`Duration: ${(result.duration / 1000).toFixed(2)}s`, 'dim'));
+
+    // Show enhanced features status
+    const hasAI = result.vulnerabilities.some(v => v.aiRemediation);
+    const preferences = this.config.getPreferences();
+    if (hasAI) {
+      console.log(this.color('AI-Enhanced: Yes', 'cyan'));
+    }
+    if (preferences.dependencyScanEnabled) {
+      console.log(this.color('Dependency Scan: Enabled', 'cyan'));
+    }
+    if (preferences.secretScanEnabled) {
+      console.log(this.color('Secret Scan: Enabled', 'cyan'));
+    }
+    console.log();
 
     if (result.vulnerabilities.length === 0) {
       this.success('No vulnerabilities found');
+      console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'dim'));
       return;
     }
 
@@ -85,26 +102,91 @@ export class Reporter {
     if (result.vulnerabilities.length > 10) {
       console.log(
         this.color(
-          `\n... and ${result.vulnerabilities.length - 10} more issues\n`,
+          `\n... and ${result.vulnerabilities.length - 10} more issue(s)\n`,
           'dim'
         )
       );
-      console.log(
-        this.color(
-          `View full results at: ${this.config.get().apiUrl}/scans/${result.scanId}`,
-          'blue'
-        )
-      );
     }
+
+    console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'dim'));
+    console.log(
+      this.color(
+        `View full results: ${this.config.get().apiUrl.replace('/api/v1', '')}/dashboard/scans?scan=${result.scanId}`,
+        'cyan'
+      )
+    );
+    console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'dim'));
   }
 
   private reportVulnerability(vuln: Vulnerability): void {
     const severityColor = this.getSeverityColor(vuln.severity);
     const severityLabel = vuln.severity.toUpperCase().padEnd(8);
 
-    console.log(this.color(severityLabel, severityColor) + ` ${vuln.type}`);
-    console.log(this.color(`  ${vuln.file}:${vuln.line}`, 'dim'));
-    console.log(this.color(`  ${vuln.description}\n`, 'reset'));
+    // Header with severity and type
+    console.log(this.color('┌─', 'dim') + this.color(` ${severityLabel}`, severityColor) + this.color('─────────────────────────────────────────', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color(vuln.type, 'bright'));
+    console.log(this.color('│ ', 'dim') + this.color(`${vuln.file}:${vuln.line}`, 'cyan'));
+    console.log(this.color('├─────────────────────────────────────────────────────', 'dim'));
+
+    // Description
+    console.log(this.color('│ ', 'dim') + this.color('Description:', 'bright'));
+    const descLines = this.wrapText(vuln.description, 50);
+    for (const line of descLines) {
+      console.log(this.color('│ ', 'dim') + `  ${line}`);
+    }
+
+    // Code snippet if available
+    if (vuln.code) {
+      console.log(this.color('│ ', 'dim'));
+      console.log(this.color('│ ', 'dim') + this.color('Code:', 'bright'));
+      const codeLines = vuln.code.split('\n');
+      for (const line of codeLines.slice(0, 3)) {
+        if (line.trim()) {
+          console.log(this.color('│ ', 'dim') + this.color(`  ${line.trim().substring(0, 50)}`, 'dim'));
+        }
+      }
+    }
+
+    // Standard remediation
+    if (vuln.remediation) {
+      console.log(this.color('│ ', 'dim'));
+      console.log(this.color('│ ', 'dim') + this.color('How to fix:', 'bright'));
+      const remLines = this.wrapText(vuln.remediation, 50);
+      for (const line of remLines.slice(0, 5)) {
+        console.log(this.color('│ ', 'dim') + `  ${line}`);
+      }
+    }
+
+    // AI remediation if available
+    if (vuln.aiRemediation) {
+      console.log(this.color('│ ', 'dim'));
+      console.log(this.color('│ ', 'dim') + this.color('AI Suggestion:', 'cyan') + this.color(' ✨', 'bright'));
+      const aiLines = this.wrapText(vuln.aiRemediation, 50);
+      for (const line of aiLines.slice(0, 5)) {
+        console.log(this.color('│ ', 'dim') + `  ${line}`);
+      }
+    }
+
+    console.log(this.color('└─────────────────────────────────────────────────────', 'dim'));
+    console.log();
+  }
+
+  private wrapText(text: string, maxWidth: number): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      if ((currentLine + ' ' + word).length <= maxWidth) {
+        currentLine = currentLine ? currentLine + ' ' + word : word;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+
+    return lines;
   }
 
   private getSeverityColor(severity: string): keyof typeof COLORS {

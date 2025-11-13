@@ -2,6 +2,12 @@ export interface Config {
   apiUrl: string;
   apiToken?: string;
   email?: string;
+  subscription?: 'free' | 'pro' | 'premier';
+  preferences?: {
+    aiScanEnabled?: boolean;
+    dependencyScanEnabled?: boolean;
+    secretScanEnabled?: boolean;
+  };
 }
 
 export interface AuthResponse {
@@ -15,6 +21,7 @@ export interface AuthResponse {
 
 export interface ScanRequest {
   files: Record<string, string>;
+  repository?: string;
   options?: {
     includeAI?: boolean;
     includeDependencies?: boolean;
@@ -31,6 +38,7 @@ export interface Vulnerability {
   code?: string;
   description: string;
   remediation?: string;
+  aiRemediation?: string;
 }
 
 export interface ScanResponse {
@@ -57,5 +65,10 @@ export interface UserProfile {
     dailyScans: number;
     scansRemaining: number;
     resetsAt: string;
+  };
+  preferences: {
+    aiScanEnabled: boolean;
+    dependencyScanEnabled: boolean;
+    secretScanEnabled: boolean;
   };
 }
