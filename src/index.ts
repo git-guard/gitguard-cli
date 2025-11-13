@@ -15,9 +15,7 @@ program
 
 program
   .command('login')
-  .description('Authenticate with GitGuard')
-  .option('-e, --email <email>', 'Email address')
-  .option('-p, --password <password>', 'Password')
+  .description('Authenticate with GitGuard via browser')
   .action(loginCommand);
 
 program
@@ -32,11 +30,15 @@ program
 
 program
   .command('scan')
-  .description('Scan code for security vulnerabilities')
-  .option('-d, --dir <path>', 'Directory to scan', process.cwd())
-  .option('--ai', 'Include AI-powered analysis (Pro/Premier only)')
-  .option('--dependencies', 'Include dependency scanning (Premier only)')
-  .option('--secrets', 'Include secret scanning (Premier only)')
+  .description('Scan code for security vulnerabilities (uses your preferences by default)')
+  .option('-d, --dir <path>', 'Directory to scan')
+  .option('-f, --file <path>', 'Specific file to scan')
+  .option('--ai', 'Force enable AI-powered analysis')
+  .option('--no-ai', 'Disable AI-powered analysis')
+  .option('--dependencies', 'Force enable dependency scanning')
+  .option('--no-dependencies', 'Disable dependency scanning')
+  .option('--secrets', 'Force enable secret scanning')
+  .option('--no-secrets', 'Disable secret scanning')
   .option('--json', 'Output results as JSON')
   .action(scanCommand);
 
