@@ -34,9 +34,10 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "commander": "^14.0.2",
     "axios": "^1.7.7",
-    "open": "^10.1.0"
+    "commander": "^14.0.2",
+    "ignore": "^7.0.5",
+    "open": "^8.4.2"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

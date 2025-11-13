@@ -54,7 +54,9 @@ If you don't have an account, sign up at [gitguard.net](https://www.gitguard.net
 
 ### Scanning Code
 
-Scan the current directory:
+**The CLI automatically uses your web app preferences!** If you have AI scanning enabled in your GitGuard account, the CLI will use it by default.
+
+Scan the current directory (uses your default settings):
 
 ```bash
 gitguard scan
@@ -66,22 +68,31 @@ Scan a specific directory:
 gitguard scan --dir ./src
 ```
 
-Enable AI-powered analysis (Pro/Premier):
+Scan a single file:
+
+```bash
+gitguard scan --file ./src/api/auth.ts
+```
+
+**Override your default settings:**
+
+Force enable AI analysis (even if disabled in your account):
 
 ```bash
 gitguard scan --ai
 ```
 
-Include dependency scanning (Premier):
+Disable AI analysis (even if enabled in your account):
 
 ```bash
-gitguard scan --dependencies
+gitguard scan --no-ai
 ```
 
-Include secret scanning (Premier):
+Enable/disable specific features:
 
 ```bash
-gitguard scan --secrets
+gitguard scan --dependencies --no-ai  # Dependencies: yes, AI: no
+gitguard scan --secrets --no-dependencies  # Secrets: yes, Dependencies: no
 ```
 
 Output JSON for CI/CD:
@@ -119,10 +130,16 @@ gitguard logout
 | Option | Description |
 |--------|-------------|
 | `-d, --dir <path>` | Directory to scan (default: current directory) |
-| `--ai` | Include AI-powered vulnerability analysis (Pro/Premier) |
-| `--dependencies` | Scan dependencies for known vulnerabilities (Premier) |
-| `--secrets` | Detect hardcoded secrets and API keys (Premier) |
+| `-f, --file <path>` | Scan a specific file |
+| `--ai` | Force enable AI-powered analysis |
+| `--no-ai` | Disable AI-powered analysis |
+| `--dependencies` | Force enable dependency scanning |
+| `--no-dependencies` | Disable dependency scanning |
+| `--secrets` | Force enable secret detection |
+| `--no-secrets` | Disable secret detection |
 | `--json` | Output results as JSON |
+
+**Note:** By default, the CLI uses your web app preferences. Override flags (`--ai`, `--dependencies`, `--secrets`) force-enable features. Disable flags (`--no-ai`, `--no-dependencies`, `--no-secrets`) force-disable them.
 
 ## Subscription Tiers
 
@@ -134,15 +151,17 @@ gitguard logout
 
 ### Pro
 - Everything in Free
-- AI-powered vulnerability analysis
+- **AI-powered vulnerability analysis** (enabled by default)
 - Private repository scanning
 - Priority support
 
 ### Premier
 - Everything in Pro
-- Dependency scanning
-- Secret detection
-- License compliance checking
+- **All scan features enabled by default:**
+  - AI-powered vulnerability analysis ✓
+  - Dependency scanning ✓
+  - Secret detection ✓
+  - License compliance checking ✓
 - Unlimited team members
 - SLA guarantee
 
@@ -216,7 +235,10 @@ The CLI automatically scans these file types:
 - **Systems**: Rust (`.rs`), C/C++ (`.c`, `.cpp`), C# (`.cs`)
 - **JVM**: Java (`.java`), Scala (`.scala`)
 
-Automatically excludes: `node_modules`, `dist`, `build`, `.git`, `.next`
+**Smart Exclusions:**
+- Automatically respects your `.gitignore` file (if present)
+- Falls back to excluding: `node_modules`, `dist`, `build`, `.git`, `.next`, `coverage`, `__pycache__`, `vendor`
+- Skips hidden directories (unless explicitly included in your project)
 
 ## Detected Vulnerabilities
 
@@ -317,8 +339,7 @@ Make sure you're in a directory with code files. The CLI only scans supported fi
 
 ## Support
 
-- 📖 [Documentation](https://www.gitguard.net/docs)
-- 💬 [Discord Community](https://discord.gg/gitguard)
+- 📖 [Documentation](https://github.com/git-guard)
 - 🐛 [Report Issues](https://github.com/git-guard/gitguard-cli/issues)
 - 📧 [Email Support](mailto:support@gitguard.net)
 
@@ -332,4 +353,4 @@ MIT © GitGuard
 
 ---
 
-Made with ❤️ by the GitGuard team | [gitguard.net](https://www.gitguard.net)
+Made with ❤️ by the [Creative Lid LLC](https://www.creativelid.com) - [GitGuard](https://www.gitguard.net) team
