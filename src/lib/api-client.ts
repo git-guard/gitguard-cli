@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { AuthResponse, ScanRequest, ScanResponse, UserProfile } from '../types';
+import { ScanRequest, ScanResponse, UserProfile } from '../types';
 import { ConfigManager } from './config';
 
 export class APIClient {
@@ -27,25 +27,18 @@ export class APIClient {
     });
   }
 
-  async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await this.client.post<AuthResponse>('/auth/login', {
-      email,
-      password,
-    });
+  async requestAuth(): Promise<{ requestCode: string; authUrl: string; expiresIn: number }> {
+    const response = await this.client.post('/auth/request');
+    return response.data.data;
+  }
+
+  async pollAuth(requestCode: string): Promise<{ status: string; token?: string }> {
+    const response = await this.client.get(`/auth/poll/${requestCode}`);
     return response.data;
   }
 
-  async register(
-    email: string,
-    password: string,
-    name?: string
-  ): Promise<AuthResponse> {
-    const response = await this.client.post<AuthResponse>('/auth/register', {
-      email,
-      password,
-      name,
-    });
-    return response.data;
+  async revokeToken(): Promise<void> {
+    await this.client.post('/auth/revoke');
   }
 
   async getProfile(): Promise<UserProfile> {

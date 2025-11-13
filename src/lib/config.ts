@@ -54,8 +54,36 @@ export class ConfigManager {
     this.set({ apiToken: token, email });
   }
 
+  public setUserProfile(subscription: string, preferences: any): void {
+    this.set({
+      subscription: subscription as 'free' | 'pro' | 'premier',
+      preferences: {
+        aiScanEnabled: preferences.aiScanEnabled || false,
+        dependencyScanEnabled: preferences.dependencyScanEnabled || false,
+        secretScanEnabled: preferences.secretScanEnabled || false,
+      },
+    });
+  }
+
+  public getSubscription(): string | undefined {
+    return this.config.subscription;
+  }
+
+  public getPreferences(): any {
+    return this.config.preferences || {
+      aiScanEnabled: false,
+      dependencyScanEnabled: false,
+      secretScanEnabled: false,
+    };
+  }
+
   public clearAuth(): void {
-    this.set({ apiToken: undefined, email: undefined });
+    this.set({
+      apiToken: undefined,
+      email: undefined,
+      subscription: undefined,
+      preferences: undefined,
+    });
   }
 
   public isAuthenticated(): boolean {
