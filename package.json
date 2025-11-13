@@ -1,0 +1,51 @@
+{
+  "name": "@gitguard/cli",
+  "version": "1.0.0",
+  "description": "GitGuard CLI - Security scanning for developers",
+  "main": "dist/index.js",
+  "bin": {
+    "gitguard": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "yarn build",
+    "test": "echo \"Tests coming soon\""
+  },
+  "keywords": [
+    "security",
+    "scanner",
+    "cli",
+    "vulnerability",
+    "code-analysis",
+    "static-analysis"
+  ],
+  "author": "GitGuard",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/git-guard/gitguard-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/git-guard/gitguard-cli/issues"
+  },
+  "homepage": "https://gitguard.net",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "axios": "^1.7.7",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.6.0"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ]
+}
