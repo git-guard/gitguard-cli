@@ -5,13 +5,20 @@ import { loginCommand } from './commands/login';
 import { logoutCommand } from './commands/logout';
 import { whoamiCommand } from './commands/whoami';
 import { scanCommand } from './commands/scan';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Get package version dynamically
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, '../package.json'), 'utf-8')
+);
 
 const program = new Command();
 
 program
   .name('gitguard')
   .description('GitGuard CLI - Security scanning for developers')
-  .version('1.0.0');
+  .version(packageJson.version);
 
 program
   .command('login')
