@@ -54,7 +54,12 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
-          registry-url: 'https://registry.npmjs.org'
+
+      - name: Configure npm for OIDC publishing
+        run: |
+          cat > $HOME/.npmrc << EOF
+          registry=https://registry.npmjs.org/
+          EOF
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
