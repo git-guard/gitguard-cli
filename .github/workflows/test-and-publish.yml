@@ -52,6 +52,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -105,6 +106,8 @@ jobs:
           git push origin "$TAG"
 
       - name: Publish to npm with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance
 
       - name: Create GitHub Release
