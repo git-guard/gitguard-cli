@@ -32,6 +32,10 @@
     "url": "https://github.com/git-guard/gitguard-cli/issues"
   },
   "homepage": "https://gitguard.net",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "engines": {
     "node": ">=18.0.0"
   },

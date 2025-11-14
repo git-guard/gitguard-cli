@@ -54,7 +54,6 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -108,10 +107,7 @@ jobs:
           git push origin "$TAG"
 
       - name: Publish to npm with provenance
-        run: |
-          # Remove NODE_AUTH_TOKEN to let OIDC take over
-          unset NODE_AUTH_TOKEN
-          npm publish --provenance --access public
+        run: npm publish --provenance
 
       - name: Create GitHub Release
         env:
