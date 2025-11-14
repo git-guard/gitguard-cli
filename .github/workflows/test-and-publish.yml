@@ -52,12 +52,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
-
-      - name: Configure npm for OIDC publishing
-        run: |
-          cat > $HOME/.npmrc << EOF
-          registry=https://registry.npmjs.org/
-          EOF
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -111,7 +106,10 @@ jobs:
           git push origin "$TAG"
 
       - name: Publish to npm with provenance
-        run: npm publish --provenance --access public
+        run: |
+          # Remove NODE_AUTH_TOKEN to let OIDC take over
+          unset NODE_AUTH_TOKEN
+          npm publish --provenance --access public
 
       - name: Create GitHub Release
         env:
