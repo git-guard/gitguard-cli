@@ -41,10 +41,60 @@ export interface Vulnerability {
   aiRemediation?: string;
 }
 
+export interface Secret {
+  file: string;
+  line: number;
+  type: string;
+  pattern: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  description: string;
+  recommendation?: string;
+  aiRemediation?: string;
+}
+
+export interface Dependency {
+  type: 'outdated' | 'vulnerable' | 'typosquatting';
+  package: string;
+  version: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  description: string;
+  vulnerability?: string;
+  latestVersion?: string;
+  cve?: string;
+  cvssScore?: number;
+  aiRemediation?: string;
+}
+
+export interface License {
+  package: string;
+  version: string;
+  license: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  description: string;
+  risk?: string;
+}
+
+export interface SecurityScore {
+  overall: number;
+  grade: string;
+  breakdown: {
+    vulnerabilities: number;
+    secrets: number;
+    dependencies: number;
+    licenses: number;
+    codeQuality: number;
+  };
+  recommendations: string[];
+}
+
 export interface ScanResponse {
   scanId: string;
   status: 'completed' | 'failed' | 'processing';
   vulnerabilities: Vulnerability[];
+  secrets?: Secret[];
+  dependencies?: Dependency[];
+  licenses?: License[];
+  securityScore?: SecurityScore | null;
   summary: {
     total: number;
     critical: number;
