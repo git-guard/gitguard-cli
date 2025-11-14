@@ -97,8 +97,13 @@ jobs:
 
       - name: Create Git tag
         run: |
-          git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}"
-          git push origin "v${{ steps.version.outputs.new_version }}"
+          TAG="v${{ steps.version.outputs.new_version }}"
+          # Delete tag if it already exists (locally and remotely)
+          git tag -d "$TAG" 2>/dev/null || true
+          git push origin ":refs/tags/$TAG" 2>/dev/null || true
+          # Create new tag
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
 
       - name: Publish to npm with provenance
         run: npm publish --access public --provenance
