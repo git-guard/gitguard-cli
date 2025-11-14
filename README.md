@@ -11,7 +11,7 @@
 - ⚡ **Fast & Easy** - Scan your code in seconds with a single command
 - 🎯 **CI/CD Ready** - Perfect for pre-commit hooks and automated pipelines
 - 🔐 **Privacy First** - Scans run securely through GitGuard's API with enterprise-grade security
-- 📊 **Subscription Tiers** - Free tier for unlimited scans with unlimited AI analysis for Premier users
+- 📊 **Subscription Tiers** - Free (5/day), Pro (100/day), Premier (unlimited scans + all features)
 
 ## Quick Start
 
@@ -144,25 +144,30 @@ gitguard logout
 ## Subscription Tiers
 
 ### Free
-- Unlimited scans per day
+- **5 scans per day**
 - Basic vulnerability detection (50+ patterns)
 - JSON export for CI/CD
 - Public repository scanning
 
 ### Pro
+- **100 scans per day**
 - Everything in Free
-- **AI-powered vulnerability analysis** (enabled by default)
+- **AI-powered vulnerability analysis**
+- Enhanced scanning
+- **Report exports** (CSV, JSON, HTML)
 - Private repository scanning
-- Priority support
 
 ### Premier
+- **Unlimited scans**
 - Everything in Pro
-- **All scan features enabled by default:**
+- **All features enabled by default:**
   - AI-powered vulnerability analysis ✓
   - Dependency scanning ✓
   - Secret detection ✓
-  - License compliance checking ✓
-- Unlimited team members
+  - DDoS testing ✓
+  - Continuous monitoring ✓
+  - Webhook notifications ✓
+- Priority support
 - SLA guarantee
 
 [View full pricing](https://www.gitguard.net/pricing)
@@ -320,10 +325,10 @@ gitguard login
 
 ### Rate Limit Exceeded
 
-Free tier has generous limits. If you hit the limit:
+Free tier includes 5 scans per day. If you hit the limit:
 
 1. Wait for the daily reset (shown in `gitguard whoami`)
-2. Or upgrade to Pro/Premier for unlimited scans
+2. Upgrade to Pro (100/day) or Premier (unlimited scans)
 
 ### No Files Found
 
