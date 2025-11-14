@@ -41,6 +41,9 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -100,10 +103,8 @@ jobs:
           git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}"
           git push origin "v${{ steps.version.outputs.new_version }}"
 
-      - name: Publish to npm
-        run: yarn publish --access public --non-interactive
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm with provenance
+        run: npm publish --access public --provenance
 
       - name: Create GitHub Release
         uses: actions/create-release@v1

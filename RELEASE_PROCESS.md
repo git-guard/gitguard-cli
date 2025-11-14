@@ -109,21 +109,30 @@ Version is automatically determined from commit messages:
 | `BREAKING CHANGE:` | **Major** (1.1.0 → 2.0.0) | Breaking changes |
 | Other | **Patch** (1.1.0 → 1.1.1) | Default |
 
-### npm Token Setup (One-Time)
+### npm Trusted Publisher Setup (One-Time)
 
-1. **Generate npm token**:
-   - Go to https://www.npmjs.com/settings/your-username/tokens
-   - Click "Generate New Token" → Choose "Automation"
-   - Copy the token
+We use npm's **Trusted Publisher** feature (OIDC) - no tokens needed!
 
-2. **Add to GitHub Secrets**:
-   - Go to https://github.com/git-guard/gitguard-cli/settings/secrets/actions
-   - Click "New repository secret"
-   - Name: `NPM_TOKEN`
-   - Value: Paste the npm token
-   - Click "Add secret"
+1. **Go to your package settings**:
+   - Visit: https://www.npmjs.com/package/@gitguard/cli/access
+   - Scroll to "Trusted Publisher" section
 
-3. **Done!** GitHub Actions will use this token to publish.
+2. **Fill in the form**:
+   - Publisher: `GitHub Actions`
+   - Organization or user: `git-guard`
+   - Repository: `gitguard-cli`
+   - Workflow filename: `test-and-publish.yml`
+   - Environment name: *(leave blank)*
+
+3. **Click "Set up connection"**
+
+4. **Done!** GitHub Actions will automatically authenticate using OIDC (no secrets needed).
+
+**Benefits over tokens**:
+- ✅ No long-lived tokens to manage
+- ✅ More secure (OIDC tokens are short-lived)
+- ✅ No secrets to store
+- ✅ npm's recommended approach
 
 ## Manual Publishing (Emergency Only)
 
