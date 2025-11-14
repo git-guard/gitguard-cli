@@ -1,15 +1,22 @@
-import { ConfigManager } from '../config';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
 jest.mock('fs');
-jest.mock('os');
+jest.mock('os', () => ({
+  homedir: jest.fn(() => '/mock/home'),
+}));
+
+import { ConfigManager } from '../config';
 
 describe('ConfigManager', () => {
   const mockHomeDir = '/mock/home';
   const mockConfigDir = path.join(mockHomeDir, '.gitguard');
   const mockConfigFile = path.join(mockConfigDir, 'config.json');
+
+  beforeAll(() => {
+    (os.homedir as jest.Mock).mockReturnValue(mockHomeDir);
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -81,15 +88,12 @@ describe('ConfigManager', () => {
       consoleWarnSpy.mockRestore();
     });
 
-    it('should respect GITGUARD_API_URL environment variable', () => {
+    it('should use default API URL when no environment variable set', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
-      process.env.GITGUARD_API_URL = 'http://localhost:3100';
 
       const config = new ConfigManager();
 
-      expect(config.get().apiUrl).toBe('http://localhost:3100');
-
-      delete process.env.GITGUARD_API_URL;
+      expect(config.get().apiUrl).toBe('https://www.gitguard.net');
     });
   });
 

@@ -1,4 +1,4 @@
-import { ScanResponse, Vulnerability } from '../types';
+import { ScanResponse, Vulnerability, Secret, Dependency } from '../types';
 import { ConfigManager } from './config';
 
 const COLORS = {
@@ -67,8 +67,12 @@ export class Reporter {
     }
     console.log();
 
-    if (result.vulnerabilities.length === 0) {
-      this.success('No vulnerabilities found');
+    const totalFindings = result.vulnerabilities.length +
+                          (result.secrets?.length || 0) +
+                          (result.dependencies?.length || 0);
+
+    if (totalFindings === 0) {
+      this.success('No security issues found');
       console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'dim'));
       return;
     }
@@ -108,6 +112,40 @@ export class Reporter {
       );
     }
 
+    // Display secrets if found
+    if (result.secrets && result.secrets.length > 0) {
+      console.log();
+      console.log(this.color(`Found ${result.secrets.length} secret(s):`, 'bright'));
+      for (const secret of result.secrets.slice(0, 5)) {
+        this.reportSecret(secret);
+      }
+      if (result.secrets.length > 5) {
+        console.log(this.color(`... and ${result.secrets.length - 5} more secret(s)\n`, 'dim'));
+      }
+    }
+
+    // Display dependency issues if found
+    if (result.dependencies && result.dependencies.length > 0) {
+      console.log();
+      console.log(this.color(`Found ${result.dependencies.length} dependency issue(s):`, 'bright'));
+
+      const criticalDeps = result.dependencies.filter(d => d.severity === 'critical' || d.severity === 'high');
+      for (const dep of criticalDeps.slice(0, 5)) {
+        this.reportDependency(dep);
+      }
+
+      const remainingCount = result.dependencies.length - criticalDeps.slice(0, 5).length;
+      if (remainingCount > 0) {
+        console.log(this.color(`... and ${remainingCount} more dependency issue(s)\n`, 'dim'));
+      }
+    }
+
+    // Display security score if available
+    if (result.securityScore) {
+      console.log();
+      console.log(this.color(`Security Score: ${result.securityScore.grade} (${result.securityScore.overall}/100)`, 'bright'));
+    }
+
     console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'dim'));
     console.log(
       this.color(
@@ -116,6 +154,66 @@ export class Reporter {
       )
     );
     console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'dim'));
+  }
+
+  private reportSecret(secret: Secret): void {
+    const severityColor = this.getSeverityColor(secret.severity);
+    const severityLabel = secret.severity.toUpperCase().padEnd(8);
+
+    console.log(this.color('┌─', 'dim') + this.color(` ${severityLabel}`, severityColor) + this.color('─────────────────────────────────────────', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color(secret.type, 'bright'));
+    console.log(this.color('│ ', 'dim') + this.color(`${secret.file}:${secret.line}`, 'cyan'));
+    console.log(this.color('├─────────────────────────────────────────────────────', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color('Description:', 'bright'));
+    const descLines = this.wrapText(secret.description, 50);
+    for (const line of descLines) {
+      console.log(this.color('│ ', 'dim') + `  ${line}`);
+    }
+
+    if (secret.recommendation) {
+      console.log(this.color('│ ', 'dim'));
+      console.log(this.color('│ ', 'dim') + this.color('Recommendation:', 'bright'));
+      const recLines = this.wrapText(secret.recommendation, 50);
+      for (const line of recLines.slice(0, 3)) {
+        console.log(this.color('│ ', 'dim') + `  ${line}`);
+      }
+    }
+
+    console.log(this.color('└─────────────────────────────────────────────────────', 'dim'));
+    console.log();
+  }
+
+  private reportDependency(dep: Dependency): void {
+    const severityColor = this.getSeverityColor(dep.severity);
+    const severityLabel = dep.severity.toUpperCase().padEnd(8);
+
+    console.log(this.color('┌─', 'dim') + this.color(` ${severityLabel}`, severityColor) + this.color('─────────────────────────────────────────', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color(`${dep.package}@${dep.version}`, 'bright'));
+    console.log(this.color('│ ', 'dim') + this.color(dep.type, 'cyan'));
+    console.log(this.color('├─────────────────────────────────────────────────────', 'dim'));
+
+    if (dep.vulnerability) {
+      console.log(this.color('│ ', 'dim') + this.color('Vulnerability:', 'bright'));
+      console.log(this.color('│ ', 'dim') + `  ${dep.vulnerability}`);
+      if (dep.cve) {
+        console.log(this.color('│ ', 'dim') + `  CVE: ${dep.cve}`);
+      }
+    }
+
+    if (dep.latestVersion) {
+      console.log(this.color('│ ', 'dim'));
+      console.log(this.color('│ ', 'dim') + this.color('Latest version:', 'bright') + ` ${dep.latestVersion}`);
+    }
+
+    console.log(this.color('│ ', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color('Description:', 'bright'));
+    const descLines = this.wrapText(dep.description, 50);
+    for (const line of descLines.slice(0, 3)) {
+      console.log(this.color('│ ', 'dim') + `  ${line}`);
+    }
+
+    console.log(this.color('└─────────────────────────────────────────────────────', 'dim'));
+    console.log();
   }
 
   private reportVulnerability(vuln: Vulnerability): void {
