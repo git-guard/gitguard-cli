@@ -23,6 +23,26 @@ const CODE_EXTENSIONS = [
   '.scala',
 ];
 
+// Files to include for dependency/license scanning (matched by full name)
+const DEPENDENCY_FILES = [
+  'package.json',
+  'package-lock.json',
+  'yarn.lock',
+  'requirements.txt',
+  'Pipfile',
+  'Pipfile.lock',
+  'pom.xml',
+  'build.gradle',
+  'Gemfile',
+  'Gemfile.lock',
+  'go.mod',
+  'go.sum',
+  'Cargo.toml',
+  'Cargo.lock',
+  'composer.json',
+  'composer.lock',
+];
+
 const EXCLUDE_DIRS = [
   'node_modules',
   'dist',
@@ -94,7 +114,10 @@ export class FileScanner {
           walk(fullPath);
         } else if (entry.isFile()) {
           const ext = path.extname(entry.name).toLowerCase();
-          if (CODE_EXTENSIONS.includes(ext)) {
+          const isCodeFile = CODE_EXTENSIONS.includes(ext);
+          const isDependencyFile = DEPENDENCY_FILES.includes(entry.name);
+
+          if (isCodeFile || isDependencyFile) {
             try {
               const content = fs.readFileSync(fullPath, 'utf-8');
               files[relativePath] = content;

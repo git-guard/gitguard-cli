@@ -25,16 +25,20 @@ export class ConfigManager {
   }
 
   private loadConfig(): Config {
+    let config = DEFAULT_CONFIG;
     if (fs.existsSync(CONFIG_FILE)) {
       try {
         const content = fs.readFileSync(CONFIG_FILE, 'utf-8');
-        return { ...DEFAULT_CONFIG, ...JSON.parse(content) };
+        config = { ...DEFAULT_CONFIG, ...JSON.parse(content) };
       } catch (error) {
         console.warn('Warning: Failed to parse config file, using defaults');
-        return DEFAULT_CONFIG;
       }
     }
-    return DEFAULT_CONFIG;
+    // Environment variable always takes precedence over saved config
+    if (process.env.GITGUARD_API_URL) {
+      config.apiUrl = process.env.GITGUARD_API_URL;
+    }
+    return config;
   }
 
   public get(): Config {
@@ -61,6 +65,9 @@ export class ConfigManager {
         aiScanEnabled: preferences.aiScanEnabled || false,
         dependencyScanEnabled: preferences.dependencyScanEnabled || false,
         secretScanEnabled: preferences.secretScanEnabled || false,
+        cvssEnabled: preferences.cvssEnabled || false,
+        apiSecurityEnabled: preferences.apiSecurityEnabled || false,
+        validationEnabled: preferences.validationEnabled || false,
       },
     });
   }
@@ -74,6 +81,9 @@ export class ConfigManager {
       aiScanEnabled: false,
       dependencyScanEnabled: false,
       secretScanEnabled: false,
+      cvssEnabled: false,
+      apiSecurityEnabled: false,
+      validationEnabled: false,
     };
   }
 
