@@ -13,6 +13,13 @@ interface ScanOptions {
   noDependencies?: boolean;
   secrets?: boolean;
   noSecrets?: boolean;
+  cvss?: boolean;
+  noCvss?: boolean;
+  apiSecurity?: boolean;
+  noApiSecurity?: boolean;
+  validate?: boolean;
+  noValidate?: boolean;
+  compliance?: string;
   json?: boolean;
 }
 
@@ -58,6 +65,11 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
     const includeAI = options.noAi ? false : (options.ai || preferences.aiScanEnabled);
     const includeDependencies = options.noDependencies ? false : (options.dependencies || preferences.dependencyScanEnabled);
     const includeSecrets = options.noSecrets ? false : (options.secrets || preferences.secretScanEnabled);
+    const includeCVSS = options.noCvss ? false : (options.cvss || preferences.cvssEnabled);
+    const includeAPISecurityScan = options.noApiSecurity ? false : (options.apiSecurity || preferences.apiSecurityEnabled);
+    const validateVulnerabilities = options.noValidate ? false : (options.validate || preferences.validationEnabled);
+
+    const complianceFramework = options.compliance as 'owasp' | 'pci-dss' | 'soc2' | 'hipaa' | 'cis' | 'all' | undefined;
 
     const result = await apiClient.scan({
       files,
@@ -66,6 +78,10 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
         includeAI,
         includeDependencies,
         includeSecrets,
+        includeCVSS,
+        includeAPISecurityScan,
+        validateVulnerabilities,
+        complianceFramework,
       },
     });
 

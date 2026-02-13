@@ -46,6 +46,13 @@ program
   .option('--no-dependencies', 'Disable dependency scanning')
   .option('--secrets', 'Force enable secret scanning')
   .option('--no-secrets', 'Disable secret scanning')
+  .option('--cvss', 'Enable CVSS 3.1 scoring for vulnerabilities (Pro/Premier)')
+  .option('--no-cvss', 'Disable CVSS scoring')
+  .option('--api-security', 'Enable API security scanning (OpenAPI/GraphQL) (Premier)')
+  .option('--no-api-security', 'Disable API security scanning')
+  .option('--validate', 'Enable vulnerability validation with confidence scoring (Pro/Premier)')
+  .option('--no-validate', 'Disable vulnerability validation')
+  .option('--compliance <framework>', 'Generate compliance report (owasp, pci-dss, soc2, hipaa, cis, all) (Premier)')
   .option('--json', 'Output results as JSON')
   .action(scanCommand);
 

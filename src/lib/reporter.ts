@@ -1,4 +1,4 @@
-import { ScanResponse, Vulnerability, Secret, Dependency } from '../types';
+import { ScanResponse, Vulnerability, Secret, Dependency, APISecurityFinding, ComplianceReport } from '../types';
 import { ConfigManager } from './config';
 
 const COLORS = {
@@ -50,8 +50,10 @@ export class Reporter {
     console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'dim'));
 
     // Show scan metadata
-    console.log(this.color(`Files scanned: ${result.filesScanned}`, 'dim'));
-    console.log(this.color(`Duration: ${(result.duration / 1000).toFixed(2)}s`, 'dim'));
+    console.log(this.color(`Files scanned: ${result.filesScanned || 0}`, 'dim'));
+    if (result.duration != null) {
+      console.log(this.color(`Duration: ${(result.duration / 1000).toFixed(2)}s`, 'dim'));
+    }
 
     // Show enhanced features status
     const hasAI = result.vulnerabilities.some(v => v.aiRemediation);
@@ -127,16 +129,63 @@ export class Reporter {
     // Display dependency issues if found
     if (result.dependencies && result.dependencies.length > 0) {
       console.log();
-      console.log(this.color(`Found ${result.dependencies.length} dependency issue(s):`, 'bright'));
 
-      const criticalDeps = result.dependencies.filter(d => d.severity === 'critical' || d.severity === 'high');
-      for (const dep of criticalDeps.slice(0, 5)) {
-        this.reportDependency(dep);
+      // Separate by type for clearer display
+      const cveVulns = result.dependencies.filter((d: any) => d.type === 'vulnerability' || d.cve);
+      const outdatedPkgs = result.dependencies.filter((d: any) => d.type === 'outdated');
+      const suspiciousPkgs = result.dependencies.filter((d: any) =>
+        d.type === 'typosquatting' || d.type === 'malicious' || d.type === 'dependency-confusion'
+      );
+
+      // Show CVE vulnerabilities (these affect score)
+      if (cveVulns.length > 0) {
+        console.log(this.color(`Found ${cveVulns.length} package(s) with known vulnerabilities:`, 'red'));
+        for (const dep of cveVulns.slice(0, 5)) {
+          this.reportDependency(dep);
+        }
+        if (cveVulns.length > 5) {
+          console.log(this.color(`... and ${cveVulns.length - 5} more vulnerable package(s)\n`, 'dim'));
+        }
       }
 
-      const remainingCount = result.dependencies.length - criticalDeps.slice(0, 5).length;
-      if (remainingCount > 0) {
-        console.log(this.color(`... and ${remainingCount} more dependency issue(s)\n`, 'dim'));
+      // Show outdated packages (informational, doesn't affect score)
+      if (outdatedPkgs.length > 0) {
+        console.log();
+        console.log(this.color(`${outdatedPkgs.length} outdated package(s) (informational):`, 'yellow'));
+        console.log(this.color('  These do not affect your security score unless they have known CVEs.', 'dim'));
+      }
+
+      // Show suspicious packages (warnings)
+      if (suspiciousPkgs.length > 0) {
+        console.log();
+        console.log(this.color(`${suspiciousPkgs.length} suspicious package(s) detected:`, 'yellow'));
+        for (const dep of suspiciousPkgs.slice(0, 3)) {
+          this.reportDependency(dep);
+        }
+        if (suspiciousPkgs.length > 3) {
+          console.log(this.color(`... and ${suspiciousPkgs.length - 3} more suspicious package(s)\n`, 'dim'));
+        }
+      }
+    }
+
+    // Display API security findings if found
+    if (result.apiSecurityFindings && result.apiSecurityFindings.length > 0) {
+      console.log();
+      console.log(this.color(`Found ${result.apiSecurityFindings.length} API security issue(s):`, 'bright'));
+      for (const finding of result.apiSecurityFindings.slice(0, 5)) {
+        this.reportAPISecurityFinding(finding);
+      }
+      if (result.apiSecurityFindings.length > 5) {
+        console.log(this.color(`... and ${result.apiSecurityFindings.length - 5} more API issue(s)\n`, 'dim'));
+      }
+    }
+
+    // Display compliance reports if available
+    if (result.complianceReports && result.complianceReports.length > 0) {
+      console.log();
+      console.log(this.color('Compliance Reports:', 'bright'));
+      for (const report of result.complianceReports) {
+        this.reportComplianceReport(report);
       }
     }
 
@@ -184,12 +233,12 @@ export class Reporter {
   }
 
   private reportDependency(dep: Dependency): void {
-    const severityColor = this.getSeverityColor(dep.severity);
-    const severityLabel = dep.severity.toUpperCase().padEnd(8);
+    const severityColor = this.getSeverityColor(dep.severity || 'medium');
+    const severityLabel = (dep.severity || 'medium').toUpperCase().padEnd(8);
 
     console.log(this.color('┌─', 'dim') + this.color(` ${severityLabel}`, severityColor) + this.color('─────────────────────────────────────────', 'dim'));
-    console.log(this.color('│ ', 'dim') + this.color(`${dep.package}@${dep.version}`, 'bright'));
-    console.log(this.color('│ ', 'dim') + this.color(dep.type, 'cyan'));
+    console.log(this.color('│ ', 'dim') + this.color(`${dep.package || 'unknown'}@${dep.version || 'unknown'}`, 'bright'));
+    console.log(this.color('│ ', 'dim') + this.color(dep.type || 'vulnerability', 'cyan'));
     console.log(this.color('├─────────────────────────────────────────────────────', 'dim'));
 
     if (dep.vulnerability) {
@@ -210,6 +259,61 @@ export class Reporter {
     const descLines = this.wrapText(dep.description, 50);
     for (const line of descLines.slice(0, 3)) {
       console.log(this.color('│ ', 'dim') + `  ${line}`);
+    }
+
+    console.log(this.color('└─────────────────────────────────────────────────────', 'dim'));
+    console.log();
+  }
+
+  private reportAPISecurityFinding(finding: APISecurityFinding): void {
+    const severityColor = this.getSeverityColor(finding.severity);
+    const severityLabel = finding.severity.toUpperCase().padEnd(8);
+
+    console.log(this.color('┌─', 'dim') + this.color(` ${severityLabel}`, severityColor) + this.color('─────────────────────────────────────────', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color(finding.type, 'bright'));
+    if (finding.endpoint) {
+      console.log(this.color('│ ', 'dim') + this.color(`${finding.method || 'ANY'} ${finding.endpoint}`, 'cyan'));
+    }
+    console.log(this.color('│ ', 'dim') + this.color(`${finding.file}:${finding.line}`, 'dim'));
+    console.log(this.color('├─────────────────────────────────────────────────────', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color('Description:', 'bright'));
+    const descLines = this.wrapText(finding.description, 50);
+    for (const line of descLines) {
+      console.log(this.color('│ ', 'dim') + `  ${line}`);
+    }
+
+    if (finding.remediation) {
+      console.log(this.color('│ ', 'dim'));
+      console.log(this.color('│ ', 'dim') + this.color('Remediation:', 'bright'));
+      const remLines = this.wrapText(finding.remediation, 50);
+      for (const line of remLines.slice(0, 3)) {
+        console.log(this.color('│ ', 'dim') + `  ${line}`);
+      }
+    }
+
+    console.log(this.color('└─────────────────────────────────────────────────────', 'dim'));
+    console.log();
+  }
+
+  private reportComplianceReport(report: ComplianceReport): void {
+    const overallScore = report.overallScore ?? 0;
+    const scoreColor = overallScore >= 80 ? 'green' : overallScore >= 50 ? 'yellow' : 'red';
+
+    console.log(this.color('┌─────────────────────────────────────────────────────', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color(`${(report.framework || 'Unknown').toUpperCase()} Compliance Report`, 'bright'));
+    console.log(this.color('├─────────────────────────────────────────────────────', 'dim'));
+    console.log(this.color('│ ', 'dim') + this.color('Score:', 'bright') + ` ${this.color(overallScore + '%', scoreColor)}`);
+    console.log(this.color('│ ', 'dim') + this.color('Passed:', 'green') + ` ${report.passedControls} controls`);
+    console.log(this.color('│ ', 'dim') + this.color('Failed:', 'red') + ` ${report.failedControls} controls`);
+    console.log(this.color('├─────────────────────────────────────────────────────', 'dim'));
+
+    const failedMappings = report.mappings.filter(m => m.status === 'fail').slice(0, 5);
+    if (failedMappings.length > 0) {
+      console.log(this.color('│ ', 'dim') + this.color('Failed Controls:', 'bright'));
+      for (const mapping of failedMappings) {
+        console.log(this.color('│ ', 'dim') + this.color(`  ${mapping.control}`, 'red'));
+        console.log(this.color('│ ', 'dim') + `    ${mapping.description.substring(0, 45)}...`);
+      }
     }
 
     console.log(this.color('└─────────────────────────────────────────────────────', 'dim'));
@@ -258,10 +362,33 @@ export class Reporter {
     // AI remediation if available
     if (vuln.aiRemediation) {
       console.log(this.color('│ ', 'dim'));
-      console.log(this.color('│ ', 'dim') + this.color('AI Suggestion:', 'cyan') + this.color(' ✨', 'bright'));
+      console.log(this.color('│ ', 'dim') + this.color('AI Suggestion:', 'cyan'));
       const aiLines = this.wrapText(vuln.aiRemediation, 50);
       for (const line of aiLines.slice(0, 5)) {
         console.log(this.color('│ ', 'dim') + `  ${line}`);
+      }
+    }
+
+    // CVSS score if available
+    if (vuln.cvss && vuln.cvss.baseScore != null) {
+      console.log(this.color('│ ', 'dim'));
+      const cvssColor = this.getCVSSColor(vuln.cvss.baseScore);
+      console.log(this.color('│ ', 'dim') + this.color('CVSS 3.1:', 'bright') + ` ${this.color(vuln.cvss.baseScore.toFixed(1), cvssColor)} (${vuln.cvss.baseSeverity || 'N/A'})`);
+      if (vuln.cvss.vector) {
+        console.log(this.color('│ ', 'dim') + this.color('Vector:', 'dim') + ` ${vuln.cvss.vector}`);
+      }
+      if (vuln.cvss.temporalScore != null) {
+        console.log(this.color('│ ', 'dim') + this.color('Temporal:', 'dim') + ` ${vuln.cvss.temporalScore.toFixed(1)}`);
+      }
+    }
+
+    // Validation result if available
+    if (vuln.validation && vuln.validation.confidence != null) {
+      console.log(this.color('│ ', 'dim'));
+      const confidenceColor = vuln.validation.confidence >= 80 ? 'green' : vuln.validation.confidence >= 50 ? 'yellow' : 'red';
+      console.log(this.color('│ ', 'dim') + this.color('Confidence:', 'bright') + ` ${this.color(vuln.validation.confidence + '%', confidenceColor)}`);
+      if (vuln.validation.falsePositive) {
+        console.log(this.color('│ ', 'dim') + this.color('Likely False Positive', 'yellow'));
       }
     }
 
@@ -269,7 +396,16 @@ export class Reporter {
     console.log();
   }
 
-  private wrapText(text: string, maxWidth: number): string[] {
+  private getCVSSColor(score: number): keyof typeof COLORS {
+    if (score == null) return 'dim';
+    if (score >= 9.0) return 'red';
+    if (score >= 7.0) return 'red';
+    if (score >= 4.0) return 'yellow';
+    return 'green';
+  }
+
+  private wrapText(text: string | undefined | null, maxWidth: number): string[] {
+    if (!text) return ['No description available'];
     const words = text.split(' ');
     const lines: string[] = [];
     let currentLine = '';

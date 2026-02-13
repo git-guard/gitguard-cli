@@ -7,6 +7,9 @@ export interface Config {
     aiScanEnabled?: boolean;
     dependencyScanEnabled?: boolean;
     secretScanEnabled?: boolean;
+    cvssEnabled?: boolean;
+    apiSecurityEnabled?: boolean;
+    validationEnabled?: boolean;
   };
 }
 
@@ -26,7 +29,28 @@ export interface ScanRequest {
     includeAI?: boolean;
     includeDependencies?: boolean;
     includeSecrets?: boolean;
+    includeCVSS?: boolean;
+    includeAPISecurityScan?: boolean;
+    validateVulnerabilities?: boolean;
+    complianceFramework?: 'owasp' | 'pci-dss' | 'soc2' | 'hipaa' | 'cis' | 'all';
   };
+}
+
+export interface CVSSScore {
+  version: '3.1';
+  baseScore: number;
+  baseSeverity: string;
+  vector: string;
+  temporalScore?: number;
+  environmentalScore?: number;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  confidence: number;
+  reasoning: string;
+  falsePositive: boolean;
+  proofOfConcept?: string;
 }
 
 export interface Vulnerability {
@@ -39,6 +63,8 @@ export interface Vulnerability {
   description: string;
   remediation?: string;
   aiRemediation?: string;
+  cvss?: CVSSScore;
+  validation?: ValidationResult;
 }
 
 export interface Secret {
@@ -87,6 +113,34 @@ export interface SecurityScore {
   recommendations: string[];
 }
 
+export interface APISecurityFinding {
+  type: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  endpoint?: string;
+  method?: string;
+  file: string;
+  line: number;
+  description: string;
+  remediation: string;
+}
+
+export interface ComplianceMapping {
+  framework: string;
+  control: string;
+  description: string;
+  status: 'pass' | 'fail' | 'warning';
+  findings: string[];
+}
+
+export interface ComplianceReport {
+  framework: string;
+  overallScore: number;
+  passedControls: number;
+  failedControls: number;
+  mappings: ComplianceMapping[];
+  generatedAt: string;
+}
+
 export interface ScanResponse {
   scanId: string;
   status: 'completed' | 'failed' | 'processing';
@@ -95,6 +149,8 @@ export interface ScanResponse {
   dependencies?: Dependency[];
   licenses?: License[];
   securityScore?: SecurityScore | null;
+  apiSecurityFindings?: APISecurityFinding[];
+  complianceReports?: ComplianceReport[];
   summary: {
     total: number;
     critical: number;
@@ -120,5 +176,8 @@ export interface UserProfile {
     aiScanEnabled: boolean;
     dependencyScanEnabled: boolean;
     secretScanEnabled: boolean;
+    cvssEnabled: boolean;
+    apiSecurityEnabled: boolean;
+    validationEnabled: boolean;
   };
 }
