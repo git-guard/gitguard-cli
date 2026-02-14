@@ -105,6 +105,9 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
       if (error.response.data?.message) {
         reporter.info(error.response.data.message);
       }
+    } else if (error.response?.status === 503 || error.response?.data?.maintenance) {
+      reporter.error('GitGuard is currently undergoing maintenance');
+      reporter.info('Please try again later. Check https://status.gitguard.net for updates.');
     } else if (error.response?.data?.message) {
       reporter.error(error.response.data.message);
     } else {

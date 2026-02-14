@@ -37,6 +37,9 @@ export async function whoamiCommand(): Promise<void> {
     if (error.response?.status === 401) {
       reporter.error('Authentication expired. Please login again.');
       config.clearAuth();
+    } else if (error.response?.status === 503 || error.response?.data?.maintenance) {
+      reporter.error('GitGuard is currently undergoing maintenance');
+      reporter.info('Please try again later. Check https://status.gitguard.net for updates.');
     } else {
       reporter.error('Failed to fetch profile');
     }
