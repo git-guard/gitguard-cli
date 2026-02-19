@@ -1,8 +1,10 @@
+import { resolve } from 'path';
 import { ConfigManager } from '../lib/config';
 import { APIClient } from '../lib/api-client';
 import { Reporter } from '../lib/reporter';
 import { FileScanner } from '../lib/file-scanner';
 import { RepoDetector } from '../lib/repo-detector';
+import { detectEditor, openFileInEditor, copyToClipboard, generateFixPrompt } from '../lib/fix-assist';
 
 interface ScanOptions {
   dir?: string;
@@ -21,6 +23,7 @@ interface ScanOptions {
   noValidate?: boolean;
   compliance?: string;
   json?: boolean;
+  fix?: boolean;
 }
 
 export async function scanCommand(options: ScanOptions): Promise<void> {
@@ -89,6 +92,37 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
       console.log(JSON.stringify(result, null, 2));
     } else {
       reporter.reportScan(result);
+
+      if (options.fix) {
+        const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+        const fixableVulns = result.vulnerabilities
+          .filter(v => v.severity === 'critical' || v.severity === 'high')
+          .sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+        if (fixableVulns.length === 0) {
+          reporter.info('No critical/high vulnerabilities to fix');
+        } else {
+          const editor = detectEditor();
+          reporter.reportFixAssistHeader(fixableVulns.length);
+
+          for (let i = 0; i < fixableVulns.length; i++) {
+            const vuln = fixableVulns[i];
+            const prompt = generateFixPrompt(vuln);
+            const isFirst = i === 0;
+
+            let clipboardSuccess = false;
+            if (isFirst) {
+              clipboardSuccess = copyToClipboard(prompt);
+              if (editor) {
+                const filePath = resolve(scanDir, vuln.file);
+                openFileInEditor(editor, filePath, vuln.line);
+              }
+            }
+
+            reporter.reportFixPrompt(vuln, prompt, i, fixableVulns.length, isFirst, editor, clipboardSuccess);
+          }
+        }
+      }
     }
 
     const hasCriticalOrHigh = result.summary.critical > 0 || result.summary.high > 0;

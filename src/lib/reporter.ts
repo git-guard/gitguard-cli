@@ -29,19 +29,19 @@ export class Reporter {
   }
 
   success(message: string): void {
-    console.log(this.color('✓ ', 'green') + message);
+    console.log(this.color('[OK] ', 'green') + message);
   }
 
   error(message: string): void {
-    console.error(this.color('✗ ', 'red') + message);
+    console.error(this.color('[FAIL] ', 'red') + message);
   }
 
   warning(message: string): void {
-    console.warn(this.color('⚠ ', 'yellow') + message);
+    console.warn(this.color('[WARN] ', 'yellow') + message);
   }
 
   info(message: string): void {
-    console.log(this.color('ℹ ', 'blue') + message);
+    console.log(this.color('[INFO] ', 'blue') + message);
   }
 
   reportScan(result: ScanResponse): void {
@@ -394,6 +394,55 @@ export class Reporter {
 
     console.log(this.color('└─────────────────────────────────────────────────────', 'dim'));
     console.log();
+  }
+
+  reportFixAssistHeader(count: number): void {
+    console.log();
+    console.log(this.color(`Fix Assist: ${count} critical/high vulnerabilit${count === 1 ? 'y' : 'ies'} found`, 'bright'));
+    console.log(this.color('──────────────────────────────────────────────────', 'dim'));
+  }
+
+  reportFixPrompt(
+    vuln: Vulnerability,
+    prompt: string,
+    index: number,
+    total: number,
+    isFirst: boolean,
+    editor: string | null,
+    clipboardSuccess: boolean
+  ): void {
+    const severityColor = this.getSeverityColor(vuln.severity);
+    const severityLabel = vuln.severity.toUpperCase();
+
+    console.log();
+    console.log(this.color(`[${index + 1}/${total}] `, 'bright') + this.color(severityLabel, severityColor) + this.color(` - ${vuln.type}`, 'bright'));
+    console.log(this.color(`  ${vuln.file}:${vuln.line}`, 'cyan'));
+
+    if (isFirst) {
+      const parts: string[] = [];
+      if (clipboardSuccess) {
+        parts.push('Prompt copied to clipboard.');
+      }
+      if (editor) {
+        const editorName = editor === 'cursor' ? 'Cursor' : 'VS Code';
+        parts.push(`Opening in ${editorName}...`);
+      }
+      if (parts.length > 0) {
+        console.log(this.color(`  ${parts.join(' ')}`, 'green'));
+      } else {
+        console.log(this.color('  Copy the prompt below and paste in your AI assistant:', 'dim'));
+      }
+    } else {
+      console.log(this.color('  Copy the prompt below and paste in your AI assistant:', 'dim'));
+    }
+
+    console.log();
+    console.log(this.color('  +- Fix Prompt ──────────────────────────────────────', 'dim'));
+    const promptLines = prompt.split('\n');
+    for (const line of promptLines) {
+      console.log(this.color('  | ', 'dim') + line);
+    }
+    console.log(this.color('  +──────────────────────────────────────────────────', 'dim'));
   }
 
   private getCVSSColor(score: number): keyof typeof COLORS {
