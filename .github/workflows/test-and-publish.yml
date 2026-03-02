@@ -60,6 +60,11 @@ jobs:
       - name: Build package
         run: yarn build
 
+      - name: Verify package includes README for npm
+        run: |
+          npm pack --dry-run 2>&1 | tee pack-list.txt
+          grep -q 'README.md' pack-list.txt || (echo "ERROR: README.md must be in package.json 'files' so npm displays it" && exit 1)
+
       - name: Configure Git
         run: |
           git config --global user.name "GitHub Actions Bot"

@@ -136,7 +136,7 @@ We use npm's **Trusted Publisher** feature (OIDC) - no tokens needed!
 
 ## Manual Publishing (Emergency Only)
 
-If automated publishing fails, you can publish manually:
+If automated publishing fails, you can publish manually. **Run all commands from the package root** (this directory):
 
 ```bash
 # Ensure you're on main branch
@@ -149,12 +149,18 @@ yarn version --new-version patch  # or minor, major
 # Build
 yarn build
 
+# Verify README and key files are in the pack (npm shows "no README" if missing)
+npm pack --dry-run
+# Should list: package.json, README.md, LICENSE, dist/...
+
 # Publish
-yarn publish --access public
+npm publish --access public
 
 # Push version bump
 git push origin main --tags
 ```
+
+**Important:** `package.json` must include `"README.md"` in the `"files"` array so the npm package page displays the README. Without it, npm shows "This package does not have a README."
 
 ## Testing Before Release
 
