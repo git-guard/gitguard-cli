@@ -74,19 +74,24 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
 
     const complianceFramework = options.compliance as 'owasp' | 'pci-dss' | 'soc2' | 'hipaa' | 'cis' | 'all' | undefined;
 
-    const result = await apiClient.scan({
-      files,
-      repository,
-      options: {
-        includeAI,
-        includeDependencies,
-        includeSecrets,
-        includeCVSS,
-        includeAPISecurityScan,
-        validateVulnerabilities,
-        complianceFramework,
+    const result = await apiClient.scan(
+      {
+        files,
+        repository,
+        options: {
+          includeAI,
+          includeDependencies,
+          includeSecrets,
+          includeCVSS,
+          includeAPISecurityScan,
+          validateVulnerabilities,
+          complianceFramework,
+        },
       },
-    });
+      {
+        onPollingStart: () => reporter.info('Scan running on server. Waiting for results...'),
+      }
+    );
 
     if (options.json) {
       console.log(JSON.stringify(result, null, 2));
@@ -142,6 +147,9 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
     } else if (error.response?.status === 503 || error.response?.data?.maintenance) {
       reporter.error('GitGuard is currently undergoing maintenance');
       reporter.info('Please try again later. Check https://status.gitguard.net for updates.');
+    } else if (error.response?.status === 504) {
+      reporter.error('Request timed out.');
+      reporter.info('Large scans may still complete on the server. Check your dashboard for results.');
     } else if (error.response?.data?.message) {
       reporter.error(error.response.data.message);
     } else {
