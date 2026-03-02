@@ -131,15 +131,17 @@ gitguard logout
 |--------|-------------|
 | `-d, --dir <path>` | Directory to scan (default: current directory) |
 | `-f, --file <path>` | Scan a specific file |
-| `--ai` | Force enable AI-powered analysis |
-| `--no-ai` | Disable AI-powered analysis |
-| `--dependencies` | Force enable dependency scanning |
-| `--no-dependencies` | Disable dependency scanning |
-| `--secrets` | Force enable secret detection |
-| `--no-secrets` | Disable secret detection |
+| `--ai` / `--no-ai` | Force enable or disable AI-powered analysis |
+| `--dependencies` / `--no-dependencies` | Dependency scanning |
+| `--secrets` / `--no-secrets` | Secret detection |
+| `--cvss` / `--no-cvss` | CVSS 3.1 scoring (Pro/Premier) |
+| `--api-security` / `--no-api-security` | API security scanning (Premier) |
+| `--validate` / `--no-validate` | Vulnerability validation (Pro/Premier) |
+| `--compliance <framework>` | Compliance report: owasp, pci-dss, soc2, hipaa, cis, all (Premier) |
 | `--json` | Output results as JSON |
+| `--fix` | Generate fix prompts and open findings in your editor |
 
-**Note:** By default, the CLI uses your web app preferences. Override flags (`--ai`, `--dependencies`, `--secrets`) force-enable features. Disable flags (`--no-ai`, `--no-dependencies`, `--no-secrets`) force-disable them.
+By default the CLI uses your web app preferences. Use `gitguard scan --help` for the full list.
 
 ## Subscription Tiers
 
@@ -234,16 +236,16 @@ Perfect for failing CI/CD pipelines on security issues!
 
 The CLI automatically scans these file types:
 
-- **Web**: TypeScript, JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`)
+- **Web**: TypeScript, JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`)
 - **Backend**: Python (`.py`), Ruby (`.rb`), PHP (`.php`), Go (`.go`)
 - **Mobile**: Swift (`.swift`), Kotlin (`.kt`)
 - **Systems**: Rust (`.rs`), C/C++ (`.c`, `.cpp`), C# (`.cs`)
 - **JVM**: Java (`.java`), Scala (`.scala`)
 
-**Smart Exclusions:**
-- Automatically respects your `.gitignore` file (if present)
-- Falls back to excluding: `node_modules`, `dist`, `build`, `.git`, `.next`, `coverage`, `__pycache__`, `vendor`
-- Skips hidden directories (unless explicitly included in your project)
+**Smart exclusions:**
+- Respects your `.gitignore` file when present
+- Excludes: `node_modules`, `dist`, `build`, `.git`, `.next`, `coverage`, `__pycache__`, `vendor`
+- Skips hidden directories unless explicitly included
 
 ## Detected Vulnerabilities
 
@@ -334,6 +336,12 @@ Free tier includes 5 scans per day. If you hit the limit:
 
 Make sure you're in a directory with code files. The CLI only scans supported file types (see "What Gets Scanned?" above).
 
+### Scan Fails with Connection Reset or Timeout
+
+If the CLI reports a connection error (e.g. `read ECONNRESET`) while "Waiting for results...", the scan may still be running on the server. The CLI retries polling automatically. If it still fails, check the dashboard—the scan often completes and results are available there.
+
+For local development against a local backend, use `GITGUARD_API_URL=http://localhost:3100 gitguard scan`. See [CONTRIBUTING.md](CONTRIBUTING.md) for full local testing setup.
+
 ## Privacy & Security
 
 - Your code is transmitted securely over HTTPS
@@ -341,6 +349,18 @@ Make sure you're in a directory with code files. The CLI only scans supported fi
 - No code is stored permanently
 - API tokens are stored locally in `~/.gitguard/config.json` (chmod 600)
 - View our [Privacy Policy](https://www.gitguard.net/privacy)
+
+## Local Development
+
+To point the CLI at a local GitGuard backend (e.g. during development):
+
+```bash
+export GITGUARD_API_URL=http://localhost:3100
+gitguard login   # Opens browser to local app
+gitguard scan
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for building and linking the CLI from source.
 
 ## Support
 

@@ -2,6 +2,15 @@ import axios, { AxiosInstance } from 'axios';
 import { ScanRequest, ScanResponse, UserProfile } from '../types';
 import { ConfigManager } from './config';
 
+function normalizeScanResponse(data: any): ScanResponse {
+  const vulnerabilities = Array.isArray(data?.vulnerabilities) ? data.vulnerabilities : [];
+  const summary =
+    data?.summary && typeof data.summary === 'object'
+      ? data.summary
+      : { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  return { ...data, vulnerabilities, summary } as ScanResponse;
+}
+
 export interface ScanOptions {
   onPollingStart?: () => void;
 }
@@ -58,14 +67,36 @@ export class APIClient {
     const pollUntilComplete = async (scanId: string): Promise<ScanResponse> => {
       options?.onPollingStart?.();
       const started = Date.now();
+      const maxPollRetries = 5;
       while (Date.now() - started < pollTimeoutMs) {
-        const statusResponse = await this.client.get<ScanResponse & { status?: string; message?: string }>(`/scan/${scanId}`, { timeout: 15000 });
-        const data = statusResponse.data;
-        if (data.status === 'completed') {
-          return data as ScanResponse;
-        }
-        if (data.status === 'failed') {
-          throw new Error(data.message || 'Scan failed');
+        for (let attempt = 0; attempt < maxPollRetries; attempt++) {
+          try {
+            const statusResponse = await this.client.get<ScanResponse & { status?: string; message?: string }>(
+              `/scan/${scanId}`,
+              { timeout: 20000 }
+            );
+            const data = statusResponse.data;
+            if (data.status === 'completed') {
+              return normalizeScanResponse(data);
+            }
+            if (data.status === 'failed') {
+              throw new Error(data.message || 'Scan failed');
+            }
+            break;
+          } catch (err: any) {
+            const code = err?.code || err?.cause?.code;
+            const isRetryable =
+              code === 'ECONNRESET' ||
+              code === 'ETIMEDOUT' ||
+              code === 'ECONNABORTED' ||
+              code === 'ENOTFOUND' ||
+              err?.response?.status >= 500;
+            if (isRetryable && attempt < maxPollRetries - 1) {
+              await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+              continue;
+            }
+            throw err;
+          }
         }
         await new Promise((r) => setTimeout(r, pollIntervalMs));
       }
@@ -107,11 +138,11 @@ export class APIClient {
       return pollUntilComplete(data.scanId);
     }
 
-    return response.data as ScanResponse;
+    return normalizeScanResponse(response.data ?? {});
   }
 
   async getScanStatus(scanId: string): Promise<ScanResponse> {
     const response = await this.client.get<ScanResponse>(`/scan/${scanId}`);
-    return response.data;
+    return normalizeScanResponse(response.data ?? {});
   }
 }

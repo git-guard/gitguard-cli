@@ -96,11 +96,24 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
     if (options.json) {
       console.log(JSON.stringify(result, null, 2));
     } else {
-      reporter.reportScan(result);
+      try {
+        reporter.reportScan(result);
+      } catch (reportError: unknown) {
+        const err = reportError as Error;
+        reporter.error('Scan failed. Please try again.');
+        if (err?.message) console.error(err.message);
+        if (process.env.GITGUARD_DEBUG && err?.stack) console.error(err.stack);
+        const fromRepo = __dirname.includes('gitguard-cli');
+        if (!fromRepo) {
+          reporter.info('Run the CLI from this repo after building: cd gitguard-cli && yarn build && GITGUARD_API_URL=http://localhost:3100 node dist/index.js scan');
+        }
+        process.exit(1);
+      }
 
       if (options.fix) {
+        const vulns = Array.isArray(result.vulnerabilities) ? result.vulnerabilities : [];
         const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
-        const fixableVulns = result.vulnerabilities
+        const fixableVulns = vulns
           .filter(v => v.severity === 'critical' || v.severity === 'high')
           .sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
@@ -130,7 +143,8 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
       }
     }
 
-    const hasCriticalOrHigh = result.summary.critical > 0 || result.summary.high > 0;
+    const summary = result.summary && typeof result.summary === 'object' ? result.summary : { critical: 0, high: 0 };
+    const hasCriticalOrHigh = (summary.critical ?? 0) > 0 || (summary.high ?? 0) > 0;
 
     if (hasCriticalOrHigh) {
       process.exit(1);

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Run the local CLI build (avoids using the global gitguard which may be an old npm version).
+# Usage: GITGUARD_API_URL=http://localhost:3100 ./scan-local
+#    or: GITGUARD_API_URL=http://localhost:3100 ./scan-local --dir /path/to/code
+DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$DIR"
+if [ ! -f dist/index.js ]; then
+  echo "Building CLI (run: yarn build)..."
+  yarn build
+fi
+exec node dist/index.js scan "$@"
