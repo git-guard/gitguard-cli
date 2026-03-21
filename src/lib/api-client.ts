@@ -114,7 +114,7 @@ export class APIClient {
         const uploadResponse = await this.client.post<{ status?: string; scanId?: string }>(
           `/scan/${scanId}/files`,
           { files, options: reqOptions },
-          { timeout: 300000, validateStatus: (s) => s === 202 }
+          { timeout: 900000, validateStatus: (s) => s === 202 }
         );
         if (uploadResponse.status === 202 && uploadResponse.data?.scanId) {
           return pollUntilComplete(uploadResponse.data.scanId);
