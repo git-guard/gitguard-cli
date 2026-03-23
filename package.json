@@ -10,7 +10,7 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "scan": "node dist/index.js scan",
-    "prepublishOnly": "yarn build",
+    "prepublishOnly": "pnpm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -58,5 +58,6 @@
     "dist",
     "LICENSE",
     "README.md"
-  ]
+  ],
+  "packageManager": "pnpm@9.15.6"
 }

@@ -34,10 +34,20 @@ gitguard scan
 npm install -g @gitguard/cli
 ```
 
-### Yarn
+### pnpm
 
 ```bash
-yarn global add @gitguard/cli
+pnpm add -g @gitguard/cli
+```
+
+## Contributing from source
+
+Clone [gitguard-cli](https://github.com/git-guard/gitguard-cli) and use pnpm for installs and scripts (see [CONTRIBUTING.md](CONTRIBUTING.md)):
+
+```bash
+pnpm install
+pnpm run build
+pnpm test
 ```
 
 ## Usage
@@ -187,7 +197,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install GitGuard CLI
         run: npm install -g @gitguard/cli
       - name: Run security scan
@@ -197,7 +207,7 @@ jobs:
           echo "$GITGUARD_API_TOKEN" | gitguard login --token
           gitguard scan --json > scan-results.json
       - name: Upload scan results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-scan
           path: scan-results.json
