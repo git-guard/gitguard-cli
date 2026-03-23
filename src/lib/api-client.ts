@@ -62,13 +62,14 @@ export class APIClient {
   async scan(request: ScanRequest, options?: ScanOptions): Promise<ScanResponse> {
     const { files, repository, options: reqOptions = {} } = request;
     const pollIntervalMs = 3000;
-    const pollTimeoutMs = 600000;
+    const pollTimeoutMs = Number(process.env.GITGUARD_SCAN_TIMEOUT_MS || '0');
+    const hasFiniteTimeout = Number.isFinite(pollTimeoutMs) && pollTimeoutMs > 0;
 
     const pollUntilComplete = async (scanId: string): Promise<ScanResponse> => {
       options?.onPollingStart?.();
       const started = Date.now();
       const maxPollRetries = 5;
-      while (Date.now() - started < pollTimeoutMs) {
+      while (!hasFiniteTimeout || Date.now() - started < pollTimeoutMs) {
         for (let attempt = 0; attempt < maxPollRetries; attempt++) {
           try {
             const statusResponse = await this.client.get<ScanResponse & { status?: string; message?: string }>(
@@ -85,12 +86,16 @@ export class APIClient {
             break;
           } catch (err: any) {
             const code = err?.code || err?.cause?.code;
+            const status = err?.response?.status;
             const isRetryable =
               code === 'ECONNRESET' ||
               code === 'ETIMEDOUT' ||
               code === 'ECONNABORTED' ||
               code === 'ENOTFOUND' ||
-              err?.response?.status >= 500;
+              status === 404 ||
+              status === 408 ||
+              status === 429 ||
+              status >= 500;
             if (isRetryable && attempt < maxPollRetries - 1) {
               await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
               continue;
