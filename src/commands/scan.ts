@@ -79,12 +79,13 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
         files,
         repository,
         options: {
-          includeAI,
-          includeDependencies,
-          includeSecrets,
-          includeCVSS,
-          includeAPISecurityScan,
-          validateVulnerabilities,
+          // Always send real booleans so JSON never drops `undefined` keys (server would treat as off).
+          includeAI: Boolean(includeAI),
+          includeDependencies: Boolean(includeDependencies),
+          includeSecrets: Boolean(includeSecrets),
+          includeCVSS: Boolean(includeCVSS),
+          includeAPISecurityScan: Boolean(includeAPISecurityScan),
+          validateVulnerabilities: Boolean(validateVulnerabilities),
           complianceFramework,
         },
       },
@@ -164,6 +165,9 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
     } else if (error.response?.status === 504) {
       reporter.error('Request timed out.');
       reporter.info('Large scans may still complete on the server. Check your dashboard for results.');
+    } else if (typeof error?.message === 'string' && error.message.startsWith('Scan timed out')) {
+      reporter.error('Scan did not finish within the CLI wait window.');
+      reporter.info(error.message);
     } else if (error.response?.data?.message) {
       reporter.error(error.response.data.message);
     } else {

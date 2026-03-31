@@ -76,15 +76,48 @@ export class ConfigManager {
     return this.config.subscription;
   }
 
-  public getPreferences(): any {
-    return this.config.preferences || {
-      aiScanEnabled: false,
-      dependencyScanEnabled: false,
-      secretScanEnabled: false,
-      cvssEnabled: false,
-      apiSecurityEnabled: false,
-      validationEnabled: false,
-    };
+  /**
+   * Merge saved preferences with tier-appropriate defaults so flags are never "stuck off"
+   * because the local file omitted `preferences` or only partially synced.
+   */
+  public getPreferences(): {
+    aiScanEnabled: boolean;
+    dependencyScanEnabled: boolean;
+    secretScanEnabled: boolean;
+    cvssEnabled: boolean;
+    apiSecurityEnabled: boolean;
+    validationEnabled: boolean;
+  } {
+    const tier = this.config.subscription ?? 'free';
+    const isPremierLike = tier === 'premier' || (tier as string) === 'enterprise';
+    const base =
+      isPremierLike
+        ? {
+            aiScanEnabled: true,
+            dependencyScanEnabled: true,
+            secretScanEnabled: true,
+            cvssEnabled: true,
+            apiSecurityEnabled: true,
+            validationEnabled: true,
+          }
+        : tier === 'pro'
+          ? {
+              aiScanEnabled: true,
+              dependencyScanEnabled: false,
+              secretScanEnabled: false,
+              cvssEnabled: true,
+              apiSecurityEnabled: false,
+              validationEnabled: true,
+            }
+          : {
+              aiScanEnabled: false,
+              dependencyScanEnabled: false,
+              secretScanEnabled: false,
+              cvssEnabled: false,
+              apiSecurityEnabled: false,
+              validationEnabled: false,
+            };
+    return { ...base, ...(this.config.preferences ?? {}) };
   }
 
   public clearAuth(): void {
