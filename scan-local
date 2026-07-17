@@ -5,7 +5,7 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 if [ ! -f dist/index.js ]; then
-  echo "Building CLI (run: yarn build)..."
-  yarn build
+  echo "Building CLI (run: pnpm run build)..."
+  pnpm run build
 fi
 exec node dist/index.js scan "$@"

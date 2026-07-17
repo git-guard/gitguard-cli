@@ -106,7 +106,7 @@ export async function scanCommand(options: ScanOptions): Promise<void> {
         if (process.env.GITGUARD_DEBUG && err?.stack) console.error(err.stack);
         const fromRepo = __dirname.includes('gitguard-cli');
         if (!fromRepo) {
-          reporter.info('Run the CLI from this repo after building: cd gitguard-cli && yarn build && GITGUARD_API_URL=http://localhost:3100 node dist/index.js scan');
+          reporter.info('Run the CLI from this repo after building: cd gitguard-cli && pnpm run build && GITGUARD_API_URL=http://localhost:3100 node dist/index.js scan');
         }
         process.exit(1);
       }
