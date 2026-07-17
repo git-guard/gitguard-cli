@@ -1,6 +1,6 @@
 {
   "name": "@gitguard/cli",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "GitGuard CLI - Security scanning for developers",
   "main": "dist/index.js",
   "bin": {
