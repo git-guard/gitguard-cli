@@ -136,7 +136,7 @@ We use npm's **Trusted Publisher** feature (OIDC) - no tokens needed!
 
 ## Manual Publishing (Emergency Only)
 
-If automated publishing fails, you can publish manually. **Run all commands from the package root** (this directory):
+If automated publishing fails, you can publish manually:
 
 ```bash
 # Ensure you're on main branch
@@ -144,23 +144,17 @@ git checkout main
 git pull origin main
 
 # Bump version
-npm version patch  # or minor, major
+pnpm version patch  # or minor, major
 
 # Build
 pnpm run build
 
-# Verify README and key files are in the pack (npm shows "no README" if missing)
-npm pack --dry-run
-# Should list: package.json, README.md, LICENSE, dist/...
-
-# Publish
+# Publish (npm CLI; packageManager is still pnpm)
 npm publish --access public
 
 # Push version bump
 git push origin main --tags
 ```
-
-**Important:** `package.json` must include `"README.md"` in the `"files"` array so the npm package page displays the README. Without it, npm shows "This package does not have a README."
 
 ## Testing Before Release
 
@@ -220,10 +214,10 @@ For testing new features before official release:
 
 ```bash
 # Create pre-release tag
-npm version 1.2.0-beta.1 --no-git-tag-version
+yarn version --new-version 1.2.0-beta.1 --no-git-tag-version
 
 # Publish with beta tag
-npm publish --tag beta --access public
+yarn publish --tag beta --access public
 
 # Users can install with:
 # npm install @gitguard/cli@beta
@@ -253,9 +247,9 @@ If a release has critical issues:
 
 ## Checklist Before Merging to Main
 
-- [ ] All tests pass locally (`pnpm test`)
+- [ ] All tests pass locally (`yarn test`)
 - [ ] Coverage meets threshold (70%+)
-- [ ] Build succeeds (`pnpm run build`)
+- [ ] Build succeeds (`yarn build`)
 - [ ] README is updated (if needed)
 - [ ] CHANGELOG is updated (if needed)
 - [ ] Breaking changes are documented
