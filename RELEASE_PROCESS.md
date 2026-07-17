@@ -144,13 +144,13 @@ git checkout main
 git pull origin main
 
 # Bump version
-yarn version --new-version patch  # or minor, major
+pnpm version patch  # or minor, major
 
 # Build
-yarn build
+pnpm run build
 
-# Publish
-yarn publish --access public
+# Publish (npm CLI; packageManager is still pnpm)
+npm publish --access public
 
 # Push version bump
 git push origin main --tags
@@ -162,25 +162,25 @@ Always test locally before creating PR to main:
 
 ```bash
 # Run tests
-yarn test
+pnpm test
 
 # Run coverage
-yarn test:coverage
+pnpm run test:coverage
 
 # Build package
-yarn build
+pnpm run build
 
 # Link locally for testing
-yarn link
+pnpm link --global
 
 # Test in another project
 cd /path/to/test-project
-yarn link @gitguard/cli
+pnpm link --global @gitguard/cli
 gitguard scan --dir .
 
 # Unlink when done
 cd /path/to/gitguard-cli
-yarn unlink
+pnpm unlink --global
 ```
 
 ## Hotfix Process
@@ -213,11 +213,11 @@ git push origin develop
 For testing new features before official release:
 
 ```bash
-# Create pre-release tag
-yarn version --new-version 1.2.0-beta.1 --no-git-tag-version
+# Create pre-release version
+pnpm version 1.2.0-beta.1 --no-git-tag-version
 
 # Publish with beta tag
-yarn publish --tag beta --access public
+npm publish --tag beta --access public
 
 # Users can install with:
 # npm install @gitguard/cli@beta
@@ -247,9 +247,9 @@ If a release has critical issues:
 
 ## Checklist Before Merging to Main
 
-- [ ] All tests pass locally (`yarn test`)
+- [ ] All tests pass locally (`pnpm test`)
 - [ ] Coverage meets threshold (70%+)
-- [ ] Build succeeds (`yarn build`)
+- [ ] Build succeeds (`pnpm run build`)
 - [ ] README is updated (if needed)
 - [ ] CHANGELOG is updated (if needed)
 - [ ] Breaking changes are documented
@@ -263,6 +263,6 @@ If a release has critical issues:
 
 ---
 
-**Last Updated**: November 14, 2025
-**Current Version**: 1.1.2
-**Next Planned Release**: 1.2.0 (with comprehensive test suite)
+**Last Updated**: July 17, 2026
+**Package manager**: pnpm@9.15.6
+**Current Version**: 1.3.7

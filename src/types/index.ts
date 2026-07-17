@@ -176,8 +176,8 @@ export interface UserProfile {
     aiScanEnabled: boolean;
     dependencyScanEnabled: boolean;
     secretScanEnabled: boolean;
-    cvssEnabled: boolean;
-    apiSecurityEnabled: boolean;
-    validationEnabled: boolean;
+    cvssEnabled?: boolean;
+    apiSecurityEnabled?: boolean;
+    validationEnabled?: boolean;
   };
 }

@@ -29,34 +29,39 @@ export class Reporter {
   }
 
   success(message: string): void {
-    console.log(this.color('✓ ', 'green') + message);
+    console.log(this.color('[OK] ', 'green') + message);
   }
 
   error(message: string): void {
-    console.error(this.color('✗ ', 'red') + message);
+    console.error(this.color('[FAIL] ', 'red') + message);
   }
 
   warning(message: string): void {
-    console.warn(this.color('⚠ ', 'yellow') + message);
+    console.warn(this.color('[WARN] ', 'yellow') + message);
   }
 
   info(message: string): void {
-    console.log(this.color('ℹ ', 'blue') + message);
+    console.log(this.color('[INFO] ', 'blue') + message);
   }
 
   reportScan(result: ScanResponse): void {
+    const safe = result != null && typeof result === 'object' ? result : ({} as ScanResponse);
+    const vulnerabilities: typeof safe.vulnerabilities = Array.isArray(safe.vulnerabilities) ? safe.vulnerabilities : [];
+    const summary =
+      safe.summary && typeof safe.summary === 'object'
+        ? safe.summary
+        : { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+
     console.log(this.color('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'dim'));
     console.log(this.color('  GitGuard Security Scan Results', 'bright'));
     console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'dim'));
 
-    // Show scan metadata
-    console.log(this.color(`Files scanned: ${result.filesScanned || 0}`, 'dim'));
-    if (result.duration != null) {
-      console.log(this.color(`Duration: ${(result.duration / 1000).toFixed(2)}s`, 'dim'));
+    console.log(this.color(`Files scanned: ${safe.filesScanned ?? 0}`, 'dim'));
+    if (safe.duration != null) {
+      console.log(this.color(`Duration: ${(safe.duration / 1000).toFixed(2)}s`, 'dim'));
     }
 
-    // Show enhanced features status
-    const hasAI = result.vulnerabilities.some(v => v.aiRemediation);
+    const hasAI = Array.isArray(vulnerabilities) && vulnerabilities.some((v: { aiRemediation?: string }) => !!v?.aiRemediation);
     const preferences = this.config.getPreferences();
     if (hasAI) {
       console.log(this.color('AI-Enhanced: Yes', 'cyan'));
@@ -69,9 +74,9 @@ export class Reporter {
     }
     console.log();
 
-    const totalFindings = result.vulnerabilities.length +
-                          (result.secrets?.length || 0) +
-                          (result.dependencies?.length || 0);
+    const totalFindings = vulnerabilities.length +
+                          (safe.secrets?.length || 0) +
+                          (safe.dependencies?.length || 0);
 
     if (totalFindings === 0) {
       this.success('No security issues found');
@@ -79,9 +84,7 @@ export class Reporter {
       return;
     }
 
-    const { summary } = result;
-
-    console.log(this.color(`Found ${result.vulnerabilities.length} issue(s):`, 'bright'));
+    console.log(this.color(`Found ${vulnerabilities.length} issue(s):`, 'bright'));
     if (summary.critical > 0) {
       console.log(this.color(`  CRITICAL: ${summary.critical}`, 'red'));
     }
@@ -99,41 +102,41 @@ export class Reporter {
     }
     console.log();
 
-    const sorted = this.sortBySeverity(result.vulnerabilities);
+    const sorted = this.sortBySeverity(vulnerabilities);
 
     for (const vuln of sorted.slice(0, 10)) {
       this.reportVulnerability(vuln);
     }
 
-    if (result.vulnerabilities.length > 10) {
+    if (vulnerabilities.length > 10) {
       console.log(
         this.color(
-          `\n... and ${result.vulnerabilities.length - 10} more issue(s)\n`,
+          `\n... and ${vulnerabilities.length - 10} more issue(s)\n`,
           'dim'
         )
       );
     }
 
     // Display secrets if found
-    if (result.secrets && result.secrets.length > 0) {
+    if (safe.secrets && safe.secrets.length > 0) {
       console.log();
-      console.log(this.color(`Found ${result.secrets.length} secret(s):`, 'bright'));
-      for (const secret of result.secrets.slice(0, 5)) {
+      console.log(this.color(`Found ${safe.secrets.length} secret(s):`, 'bright'));
+      for (const secret of safe.secrets.slice(0, 5)) {
         this.reportSecret(secret);
       }
-      if (result.secrets.length > 5) {
-        console.log(this.color(`... and ${result.secrets.length - 5} more secret(s)\n`, 'dim'));
+      if (safe.secrets.length > 5) {
+        console.log(this.color(`... and ${safe.secrets.length - 5} more secret(s)\n`, 'dim'));
       }
     }
 
     // Display dependency issues if found
-    if (result.dependencies && result.dependencies.length > 0) {
+    if (safe.dependencies && safe.dependencies.length > 0) {
       console.log();
 
       // Separate by type for clearer display
-      const cveVulns = result.dependencies.filter((d: any) => d.type === 'vulnerability' || d.cve);
-      const outdatedPkgs = result.dependencies.filter((d: any) => d.type === 'outdated');
-      const suspiciousPkgs = result.dependencies.filter((d: any) =>
+      const cveVulns = safe.dependencies.filter((d: any) => d.type === 'vulnerability' || d.cve);
+      const outdatedPkgs = safe.dependencies.filter((d: any) => d.type === 'outdated');
+      const suspiciousPkgs = safe.dependencies.filter((d: any) =>
         d.type === 'typosquatting' || d.type === 'malicious' || d.type === 'dependency-confusion'
       );
 
@@ -169,36 +172,36 @@ export class Reporter {
     }
 
     // Display API security findings if found
-    if (result.apiSecurityFindings && result.apiSecurityFindings.length > 0) {
+    if (safe.apiSecurityFindings && safe.apiSecurityFindings.length > 0) {
       console.log();
-      console.log(this.color(`Found ${result.apiSecurityFindings.length} API security issue(s):`, 'bright'));
-      for (const finding of result.apiSecurityFindings.slice(0, 5)) {
+      console.log(this.color(`Found ${safe.apiSecurityFindings.length} API security issue(s):`, 'bright'));
+      for (const finding of safe.apiSecurityFindings.slice(0, 5)) {
         this.reportAPISecurityFinding(finding);
       }
-      if (result.apiSecurityFindings.length > 5) {
-        console.log(this.color(`... and ${result.apiSecurityFindings.length - 5} more API issue(s)\n`, 'dim'));
+      if (safe.apiSecurityFindings.length > 5) {
+        console.log(this.color(`... and ${safe.apiSecurityFindings.length - 5} more API issue(s)\n`, 'dim'));
       }
     }
 
     // Display compliance reports if available
-    if (result.complianceReports && result.complianceReports.length > 0) {
+    if (safe.complianceReports && safe.complianceReports.length > 0) {
       console.log();
       console.log(this.color('Compliance Reports:', 'bright'));
-      for (const report of result.complianceReports) {
+      for (const report of safe.complianceReports) {
         this.reportComplianceReport(report);
       }
     }
 
     // Display security score if available
-    if (result.securityScore) {
+    if (safe.securityScore) {
       console.log();
-      console.log(this.color(`Security Score: ${result.securityScore.grade} (${result.securityScore.overall}/100)`, 'bright'));
+      console.log(this.color(`Security Score: ${safe.securityScore.grade} (${safe.securityScore.overall}/100)`, 'bright'));
     }
 
     console.log(this.color('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'dim'));
     console.log(
       this.color(
-        `View full results: ${this.config.get().apiUrl.replace('/api/v1', '')}/dashboard/scans?scan=${result.scanId}`,
+        `View full results: ${this.config.get().apiUrl.replace('/api/v1', '')}/dashboard/scans?scan=${safe.scanId}`,
         'cyan'
       )
     );
@@ -394,6 +397,55 @@ export class Reporter {
 
     console.log(this.color('└─────────────────────────────────────────────────────', 'dim'));
     console.log();
+  }
+
+  reportFixAssistHeader(count: number): void {
+    console.log();
+    console.log(this.color(`Fix Assist: ${count} critical/high vulnerabilit${count === 1 ? 'y' : 'ies'} found`, 'bright'));
+    console.log(this.color('──────────────────────────────────────────────────', 'dim'));
+  }
+
+  reportFixPrompt(
+    vuln: Vulnerability,
+    prompt: string,
+    index: number,
+    total: number,
+    isFirst: boolean,
+    editor: string | null,
+    clipboardSuccess: boolean
+  ): void {
+    const severityColor = this.getSeverityColor(vuln.severity);
+    const severityLabel = vuln.severity.toUpperCase();
+
+    console.log();
+    console.log(this.color(`[${index + 1}/${total}] `, 'bright') + this.color(severityLabel, severityColor) + this.color(` - ${vuln.type}`, 'bright'));
+    console.log(this.color(`  ${vuln.file}:${vuln.line}`, 'cyan'));
+
+    if (isFirst) {
+      const parts: string[] = [];
+      if (clipboardSuccess) {
+        parts.push('Prompt copied to clipboard.');
+      }
+      if (editor) {
+        const editorName = editor === 'cursor' ? 'Cursor' : 'VS Code';
+        parts.push(`Opening in ${editorName}...`);
+      }
+      if (parts.length > 0) {
+        console.log(this.color(`  ${parts.join(' ')}`, 'green'));
+      } else {
+        console.log(this.color('  Copy the prompt below and paste in your AI assistant:', 'dim'));
+      }
+    } else {
+      console.log(this.color('  Copy the prompt below and paste in your AI assistant:', 'dim'));
+    }
+
+    console.log();
+    console.log(this.color('  +- Fix Prompt ──────────────────────────────────────', 'dim'));
+    const promptLines = prompt.split('\n');
+    for (const line of promptLines) {
+      console.log(this.color('  | ', 'dim') + line);
+    }
+    console.log(this.color('  +──────────────────────────────────────────────────', 'dim'));
   }
 
   private getCVSSColor(score: number): keyof typeof COLORS {

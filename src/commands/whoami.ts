@@ -25,18 +25,30 @@ export async function whoamiCommand(): Promise<void> {
 
     if (profile.subscription !== 'free') {
       console.log(`\nDefault Scan Settings:`);
-      console.log(`  AI Analysis: ${profile.preferences.aiScanEnabled ? '✓ Enabled' : '✗ Disabled'}`);
+      console.log(`  AI Analysis: ${profile.preferences.aiScanEnabled ? 'Enabled' : 'Disabled'}`);
       if (profile.subscription === 'premier') {
-        console.log(`  Dependency Scanning: ${profile.preferences.dependencyScanEnabled ? '✓ Enabled' : '✗ Disabled'}`);
-        console.log(`  Secret Detection: ${profile.preferences.secretScanEnabled ? '✓ Enabled' : '✗ Disabled'}`);
+        console.log(`  Dependency Scanning: ${profile.preferences.dependencyScanEnabled ? 'Enabled' : 'Disabled'}`);
+        console.log(`  Secret Detection: ${profile.preferences.secretScanEnabled ? 'Enabled' : 'Disabled'}`);
       }
-      console.log(`\nUse --ai, --dependencies, or --secrets to override these defaults.`);
-      console.log(`Use --no-ai, --no-dependencies, or --no-secrets to disable features.`);
+      if (profile.preferences.cvssEnabled !== undefined) {
+        console.log(`  CVSS Scoring: ${profile.preferences.cvssEnabled ? 'Enabled' : 'Disabled'}`);
+      }
+      if (profile.preferences.apiSecurityEnabled !== undefined) {
+        console.log(`  API Security: ${profile.preferences.apiSecurityEnabled ? 'Enabled' : 'Disabled'}`);
+      }
+      if (profile.preferences.validationEnabled !== undefined) {
+        console.log(`  Validation: ${profile.preferences.validationEnabled ? 'Enabled' : 'Disabled'}`);
+      }
+      console.log(`\nUse --ai, --dependencies, --secrets, --cvss, --api-security, --validate to enable.`);
+      console.log(`Use --no-ai, --no-dependencies, etc. to disable.`);
     }
   } catch (error: any) {
     if (error.response?.status === 401) {
       reporter.error('Authentication expired. Please login again.');
       config.clearAuth();
+    } else if (error.response?.status === 503 || error.response?.data?.maintenance) {
+      reporter.error('GitGuard is currently undergoing maintenance');
+      reporter.info('Please try again later. Check https://status.gitguard.net for updates.');
     } else {
       reporter.error('Failed to fetch profile');
     }

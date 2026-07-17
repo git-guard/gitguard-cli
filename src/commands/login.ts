@@ -69,13 +69,13 @@ export async function loginCommand(): Promise<void> {
     if (profile.subscription !== 'free') {
       reporter.info('\nDefault scan features:');
       if (profile.preferences.aiScanEnabled && (profile.subscription === 'pro' || profile.subscription === 'premier')) {
-        reporter.info('  ✓ AI-powered analysis enabled');
+        reporter.info('  AI-powered analysis enabled');
       }
       if (profile.preferences.dependencyScanEnabled && profile.subscription === 'premier') {
-        reporter.info('  ✓ Dependency scanning enabled');
+        reporter.info('  Dependency scanning enabled');
       }
       if (profile.preferences.secretScanEnabled && profile.subscription === 'premier') {
-        reporter.info('  ✓ Secret detection enabled');
+        reporter.info('  Secret detection enabled');
       }
       reporter.info('\nUse --no-ai, --no-dependencies, or --no-secrets to disable specific features.');
     }

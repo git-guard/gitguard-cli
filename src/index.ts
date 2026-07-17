@@ -54,6 +54,7 @@ program
   .option('--no-validate', 'Disable vulnerability validation')
   .option('--compliance <framework>', 'Generate compliance report (owasp, pci-dss, soc2, hipaa, cis, all) (Premier)')
   .option('--json', 'Output results as JSON')
+  .option('--fix', 'Generate fix prompts and open vulnerabilities in your editor')
   .action(scanCommand);
 
 program.parse(process.argv);

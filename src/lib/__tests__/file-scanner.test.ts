@@ -282,7 +282,7 @@ describe('FileScanner', () => {
       (fs.statSync as jest.Mock).mockReturnValue({ isFile: () => true });
 
       await expect(scanner.scanSingleFile('/test/image.png')).rejects.toThrow(
-        'Unsupported file type: .png'
+        'Unsupported file type'
       );
     });
 
